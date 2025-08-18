@@ -108,7 +108,7 @@ class EmbeddingService:
                 SELECT 
                     de.id,
                     de.chunk_text,
-                    de.metadata,
+                    de.embedding_metadata,
                     de.chunk_index,
                     d.filename,
                     d.file_type,
@@ -122,7 +122,7 @@ class EmbeddingService:
             
             # Add knowledge base filter if specified
             if knowledge_base_name:
-                search_query += " AND d.metadata::jsonb->>'knowledge_base' = :kb_name"
+                search_query += " AND d.document_metadata::jsonb->>'knowledge_base' = :kb_name"
                 params["kb_name"] = knowledge_base_name
             
             search_query += """
@@ -140,7 +140,7 @@ class EmbeddingService:
                     {
                         "id": str(row.id),
                         "chunk_text": row.chunk_text,
-                        "metadata": json.loads(row.metadata) if row.metadata else {},
+                        "metadata": json.loads(row.embedding_metadata) if row.embedding_metadata else {},
                         "chunk_index": row.chunk_index,
                         "filename": row.filename,
                         "file_type": row.file_type,
@@ -163,7 +163,7 @@ class EmbeddingService:
             if knowledge_base_name:
                 # Join with documents to filter by knowledge base
                 query = query.join(Document).filter(
-                    Document.metadata.contains(f'"knowledge_base": "{knowledge_base_name}"')
+                    Document.document_metadata.contains(f'"knowledge_base": "{knowledge_base_name}"')
                 )
             
             return query.all()
@@ -202,7 +202,7 @@ class EmbeddingService:
                 total_query = session.query(DocumentEmbedding)
                 if knowledge_base_name:
                     total_query = total_query.join(Document).filter(
-                        Document.metadata.contains(f'"knowledge_base": "{knowledge_base_name}"')
+                        Document.document_metadata.contains(f'"knowledge_base": "{knowledge_base_name}"')
                     )
                 total_chunks = total_query.count()
                 
@@ -212,7 +212,7 @@ class EmbeddingService:
                 )
                 if knowledge_base_name:
                     with_embeddings_query = with_embeddings_query.join(Document).filter(
-                        Document.metadata.contains(f'"knowledge_base": "{knowledge_base_name}"')
+                        Document.document_metadata.contains(f'"knowledge_base": "{knowledge_base_name}"')
                     )
                 chunks_with_embeddings = with_embeddings_query.count()
                 

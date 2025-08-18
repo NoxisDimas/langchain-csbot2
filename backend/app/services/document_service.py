@@ -177,7 +177,7 @@ class DocumentService:
                     file_type=file_type,
                     file_size=file_size,
                     content=text_content,
-                    metadata=json.dumps({
+                    document_metadata=json.dumps({
                         "knowledge_base": knowledge_base_name,
                         "processed_at": datetime.utcnow().isoformat(),
                         "file_type": file_type
@@ -202,7 +202,7 @@ class DocumentService:
                         document_id=document.id,
                         chunk_index=i,
                         chunk_text=chunk.page_content,
-                        metadata=json.dumps(chunk.metadata)
+                        embedding_metadata=json.dumps(chunk.metadata)
                     )
                     session.add(embedding)
                 
