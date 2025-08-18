@@ -9,6 +9,7 @@ from app.api.telegram import router as telegram_router
 from app.api.docs import router as docs_router
 from app.api.whatsapp import router as whatsapp_router
 from app.api.crm import router as crm_router
+from app.api.rag import router as rag_router
 from app.persistence.db import init_db
 
 
@@ -68,3 +69,4 @@ app.include_router(telegram_router, prefix="/api/telegram")
 app.include_router(docs_router, prefix="/api/docs")
 app.include_router(whatsapp_router, prefix="/api/whatsapp")
 app.include_router(crm_router, prefix="/api/crm")
+app.include_router(rag_router, prefix="/api")
