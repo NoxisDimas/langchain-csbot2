@@ -20,11 +20,13 @@ def _get_memstore():
 		return _memstore
 	if PGVector is None:
 		return None
+	if not _settings.DATABASE_URL:
+		return None
 	embeddings = get_embedding_model()
 	_memstore = PGVector(
-		connection_string=_settings.DATABASE_URL,
+		embeddings,
+		connection=_settings.DATABASE_URL,
 		collection_name=f"{_settings.DB_SCHEMA}_memory",
-		embedding_function=embeddings,
 	)
 	return _memstore
 

@@ -8,6 +8,7 @@ try:
 	from langchain_postgres import PGVector
 except Exception:  # pragma: no cover - optional import at dev time
 	PGVector = None  # type: ignore
+## no direct psycopg usage needed; PGVector accepts a connection string
 
 
 _settings = get_settings()
@@ -20,11 +21,13 @@ def _get_vectorstore():
 		return _vectorstore
 	if PGVector is None:
 		return None
+	if not _settings.DATABASE_URL:
+		return None
 	_embeddings = get_embedding_model()
 	_vectorstore = PGVector(
-		connection_string=_settings.DATABASE_URL,
+		_embeddings,
+		connection=_settings.DATABASE_URL,
 		collection_name=f"{_settings.DB_SCHEMA}",
-		embedding_function=_embeddings,
 	)
 	return _vectorstore
 
