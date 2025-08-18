@@ -1,0 +1,12 @@
+__pycache__/
+.venv/
+.env
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+coverage/
+.pytest_cache/
+node_modules/
+frontend/dist/

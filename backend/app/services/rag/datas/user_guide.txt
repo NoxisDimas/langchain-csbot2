@@ -1,0 +1,25 @@
+Panduan Penggunaan Layanan LarisMart
+
+1. Mencari Produk:
+   Pengguna dapat mencari produk dengan mengetikkan nama produk, kategori, atau merek ke kolom pencarian. Sistem akan menampilkan produk yang relevan berdasarkan kata kunci.
+
+2. Melihat Detail Produk:
+   Klik pada gambar atau nama produk untuk melihat deskripsi, spesifikasi, harga, dan ketersediaan stok.
+
+3. Menambahkan ke Keranjang:
+   Klik tombol "Tambahkan ke Keranjang" jika ingin menyimpan produk sebelum checkout. Produk bisa disunting atau dihapus dari keranjang kapan saja.
+
+4. Membuat Pesanan:
+   a. Klik "Checkout" dari keranjang belanja.
+   b. Isi informasi pengiriman: nama, alamat, nomor HP.
+   c. Pilih metode pembayaran.
+   d. Klik "Konfirmasi Pesanan".
+
+5. Konfirmasi Pembayaran:
+   Setelah transfer, buka menu “Konfirmasi Pembayaran” dan unggah bukti pembayaran untuk mempercepat verifikasi.
+
+6. Melacak Status Pesanan:
+   Gunakan fitur “Cek Pesanan” dengan memasukkan nomor pesanan atau nama lengkap. Sistem akan menampilkan status dan nomor resi pengiriman jika tersedia.
+
+7. Menghubungi Customer Service:
+   Jika mengalami kendala, hubungi layanan pelanggan kami melalui WhatsApp atau email resmi.
