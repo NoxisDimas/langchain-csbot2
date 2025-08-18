@@ -22,9 +22,9 @@ def _get_vectorstore():
 		return None
 	_embeddings = get_embedding_model()
 	_vectorstore = PGVector(
-		connection_string=_settings.DATABASE_URL,
+		embeddings=_embeddings,
+		connection=_settings.DATABASE_URL,
 		collection_name=f"{_settings.DB_SCHEMA}",
-		embedding_function=_embeddings,
 	)
 	return _vectorstore
 

@@ -17,8 +17,8 @@ def ingest_documents(docs: List[Document]):
 		raise RuntimeError("langchain-postgres is not installed or DB not configured")
 	embeddings = get_embedding_model()
 	vs = PGVector(
-		connection_string=_settings.DATABASE_URL,
+		embeddings=embeddings,
+		connection=_settings.DATABASE_URL,
 		collection_name=f"{_settings.DB_SCHEMA}",
-		embedding_function=embeddings,
 	)
 	vs.add_documents(docs)
