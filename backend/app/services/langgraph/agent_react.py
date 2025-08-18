@@ -20,13 +20,18 @@ def _react_prompt(system_instructions: str) -> PromptTemplate:
 	Rules:
 	- Use EXACTLY one tool per Action step.
 	- If you output an Action, DO NOT output Final Answer in the same step.
-	- Only output Final Answer after you are done using tools.
+	- AFTER an Action, WAIT for an Observation before continuing.
+	- Only output Final Answer when you have enough information and no further Action is needed.
 
 	Use the following format:
 	Question: {{input}}
 	Thought: you should always think about what to do
 	Action: the tool to use, should be one of [{{tool_names}}]
 	Action Input: the input to the tool
+
+	Observation: the result of the action
+	... (this Thought/Action/Action Input/Observation can repeat N times)
+	Thought: I now know the final answer
 	Final Answer: the final answer to the original input question
 
 	Begin!
