@@ -17,6 +17,11 @@ def _react_prompt(system_instructions: str) -> PromptTemplate:
 	Tool names for reference:
 	{{tool_names}}
 
+	Rules:
+	- Use EXACTLY one tool per Action step.
+	- If you output an Action, DO NOT output Final Answer in the same step.
+	- Only output Final Answer after you are done using tools.
+
 	Use the following format:
 	Question: {{input}}
 	Thought: you should always think about what to do
@@ -68,7 +73,7 @@ def make_order_status_agent() -> AgentExecutor:
 	model = get_chat_model(temperature=0.0)
 	tools = _order_status_tools()
 	agent = create_react_agent(model, tools, _react_prompt(system))
-	return AgentExecutor(agent=agent, tools=tools, verbose=False)
+	return AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True, max_iterations=3)
 
 
 def make_product_reco_agent() -> AgentExecutor:
@@ -79,7 +84,7 @@ def make_product_reco_agent() -> AgentExecutor:
 	model = get_chat_model(temperature=0.2)
 	tools = _product_reco_tools()
 	agent = create_react_agent(model, tools, _react_prompt(system))
-	return AgentExecutor(agent=agent, tools=tools, verbose=False)
+	return AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True, max_iterations=3)
 
 
 def make_general_qa_agent() -> AgentExecutor:
@@ -89,10 +94,10 @@ def make_general_qa_agent() -> AgentExecutor:
 		" If not found, say you're not sure and suggest contacting support."
 	)
 	model = get_chat_model(temperature=0.2)
-	try :
+	try:
 		tools = _general_qa_tools()
 		agent = create_react_agent(model, tools, _react_prompt(system))
-		return AgentExecutor(agent=agent, tools=tools, verbose=False)
+		return AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True, max_iterations=3)
 	except Exception as e:
 		logging.error(f"[General agent]: {e}")
 		return None
@@ -106,4 +111,4 @@ def make_handover_agent() -> AgentExecutor:
 	model = get_chat_model(temperature=0.0)
 	tools = _handover_tools()
 	agent = create_react_agent(model, tools, _react_prompt(system))
-	return AgentExecutor(agent=agent, tools=tools, verbose=False)
+	return AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True, max_iterations=3)

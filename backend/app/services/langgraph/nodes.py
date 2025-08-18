@@ -64,6 +64,7 @@ def node_general_qa_handler(state: GraphState) -> GraphState:
 		return {**state, "assistant_response": answer}
 	except Exception as e:
 		logging.error(f"[General Agent] error: {e}")
+		return {**state, "assistant_response": "Maaf, saya mengalami kendala memproses pertanyaan Anda."}
 
 
 def node_handover(state: GraphState) -> GraphState:
@@ -74,5 +75,7 @@ def node_handover(state: GraphState) -> GraphState:
 
 
 def node_end(state: GraphState) -> GraphState:
+	if state.get("assistant_response"):
+		return state
 	closing = "Apakah ada pertanyaan lain? Jika tidak, terima kasih telah menghubungi kami."
 	return {**state, "assistant_response": closing}
