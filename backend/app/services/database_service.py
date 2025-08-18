@@ -12,7 +12,7 @@ settings = get_settings()
 
 class DatabaseService:
     def __init__(self):
-        self.engine = create_engine(settings.database_url)
+        self.engine = create_engine(settings.DATABASE_URL)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self.inspector = inspect(self.engine)
     

@@ -50,9 +50,15 @@ class UploadResponse(BaseModel):
     message: str
 
 # Initialize services
-db_service = DatabaseService()
-document_service = DocumentService()
-embedding_service = EmbeddingService()
+try:
+    db_service = DatabaseService()
+    document_service = DocumentService()
+    embedding_service = EmbeddingService()
+except Exception as e:
+    print(f"Warning: Failed to initialize database services: {e}")
+    db_service = None
+    document_service = None
+    embedding_service = None
 
 @router.post("/knowledge-bases", response_model=KnowledgeBaseResponse)
 async def create_knowledge_base(kb_data: KnowledgeBaseCreate):
