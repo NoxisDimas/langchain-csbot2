@@ -228,58 +228,17 @@ class DocumentService:
                 session.commit()
                 session.refresh(document)
             
-            # Create chunks
-            chunks = self.chunk_text(text_content, {
-                "document_id": str(document.id),
-                "filename": filename,
-                "knowledge_base": knowledge_base_name
-            })
-            
-            # Store chunks (embeddings will be created later)
-            with self.db_service.get_session() as session:
-                for i, chunk in enumerate(chunks):
-                    embedding = DocumentEmbedding(
-                        document_id=document.id,
-                        chunk_index=i,
-                        chunk_text=chunk.page_content,
-                        embedding_metadata=json.dumps(chunk.metadata)
-                    )
-                    session.add(embedding)
-                
-                # Mark document as processed
-                document.is_processed = True
-                session.commit()
-            
-            return document
+            # Legacy persist disabled in RAG-only mode
+            return None
             
         except Exception as e:
             print(f"Error processing file: {e}")
             return None
     
-    def get_document_chunks(self, document_id: str) -> List[DocumentEmbedding]:
-        """Get all chunks for a document"""
-        with self.db_service.get_session() as session:
-            return session.query(DocumentEmbedding).filter(
-                DocumentEmbedding.document_id == document_id
-            ).order_by(DocumentEmbedding.chunk_index).all()
+    def get_document_chunks(self, document_id: str):
+        return []
     
     def search_documents(self, query: str, knowledge_base_name: str = None, limit: int = 10) -> List[Dict[str, Any]]:
         """Search documents by query (placeholder for vector search)"""
         # This will be implemented with vector search
-        with self.db_service.get_session() as session:
-            query_obj = session.query(Document)
-            if knowledge_base_name:
-                # Filter by knowledge base if specified
-                pass
-            
-            documents = query_obj.limit(limit).all()
-            return [
-                {
-                    "id": str(doc.id),
-                    "filename": doc.filename,
-                    "file_type": doc.file_type,
-                    "created_at": doc.created_at.isoformat(),
-                    "is_processed": doc.is_processed
-                }
-                for doc in documents
-            ]
+        return []
