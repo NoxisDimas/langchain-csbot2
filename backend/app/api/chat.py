@@ -37,5 +37,5 @@ def chat(req: ChatRequest):
 			current_task=result.get("current_task"),
 			metadata={k: v for k, v in result.items() if k not in {"assistant_response", "handoff_to_human", "current_task"}},
 		)
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=str(e))
+	except Exception:
+		raise HTTPException(status_code=500, detail="Internal error")

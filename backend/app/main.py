@@ -47,7 +47,7 @@ app = FastAPI(
 )
 
 
-# Enable CORS for local frontend testing
+# Enable CORS (open in dev; restrict in production via env)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

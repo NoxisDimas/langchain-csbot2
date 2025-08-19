@@ -16,7 +16,8 @@ export const App: React.FC = () => {
 		setInput("")
 		setLoading(true)
 		try {
-			const resp = await axios.post('http://localhost:8000/api/chat', {
+			const base = (import.meta as any).env?.VITE_API_URL || ''
+			const resp = await axios.post(`${base}/api/chat`, {
 				session_id: sessionId,
 				message: userMsg.content,
 				channel: 'web',

@@ -16,7 +16,6 @@ interface Document {
   filename: string;
   file_type: string;
   file_size: number;
-  is_processed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -32,17 +31,13 @@ interface SearchResult {
 }
 
 interface Stats {
-  knowledge_bases: number;
-  documents: number;
-  embeddings: {
-    total_chunks: number;
-    chunks_with_embeddings: number;
-    chunks_without_embeddings: number;
-    completion_percentage: number;
-  };
+  vectorstore: {
+    collection: string;
+    total_vectors: number;
+  }
 }
 
-const API_BASE = 'http://localhost:8000/api/rag';
+const API_BASE = (import.meta as any).env?.VITE_API_URL ? `${(import.meta as any).env.VITE_API_URL}/api/rag` : '/api/rag';
 
 export const RAGUpload: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -61,7 +56,7 @@ export const RAGUpload: React.FC = () => {
   // Load initial data
   useEffect(() => {
     loadKnowledgeBases();
-    loadDocuments();
+    // documents panel removed; skip load
     loadStats();
   }, []);
 
@@ -74,14 +69,7 @@ export const RAGUpload: React.FC = () => {
     }
   };
 
-  const loadDocuments = async () => {
-    try {
-      const response = await axios.get(`${API_BASE}/documents`);
-      setDocuments(response.data);
-    } catch (error) {
-      console.error('Error loading documents:', error);
-    }
-  };
+  const loadDocuments = async () => { setDocuments([]); };
 
   const loadStats = async () => {
     try {
@@ -125,8 +113,7 @@ export const RAGUpload: React.FC = () => {
       setUploadMessage(`✅ Uploaded ${successCount} file(s)` + (failCount ? `, ❌ failed ${failCount}` : ''));
       setSelectedFiles([]);
 
-      // Reload documents and stats
-      loadDocuments();
+      // Reload stats
       loadStats();
 
       // Reset file input
@@ -204,19 +191,6 @@ export const RAGUpload: React.FC = () => {
       alert(`Search error: ${error.response?.data?.detail || error.message}`);
     } finally {
       setSearching(false);
-    }
-  };
-
-  const processEmbeddings = async () => {
-    try {
-      const response = await axios.post(`${API_BASE}/process-embeddings`, {
-        knowledge_base: selectedKnowledgeBase === 'default' ? null : selectedKnowledgeBase,
-        batch_size: 100
-      });
-      alert(`✅ ${response.data.message}`);
-      loadStats();
-    } catch (error: any) {
-      alert(`Error processing embeddings: ${error.response?.data?.detail || error.message}`);
     }
   };
 
@@ -423,7 +397,7 @@ export const RAGUpload: React.FC = () => {
           <h2>Manage Knowledge Base</h2>
           
           {/* Create New Knowledge Base */}
-          <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '4px' }}>
+          <div style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px' }}>
             <h3>Create New Knowledge Base</h3>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'end' }}>
               <div>
@@ -499,103 +473,22 @@ export const RAGUpload: React.FC = () => {
             ))}
           </div>
 
-          {/* Documents List */}
-          <div>
-            <h3>Documents</h3>
-            <button
-              onClick={processEmbeddings}
-              style={{
-                padding: '8px 16px',
-                background: '#17a2b8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                marginBottom: '15px'
-              }}
-            >
-              Process Pending Embeddings
-            </button>
-            
-            {documents.map(doc => (
-              <div key={doc.id} style={{ 
-                padding: '15px', 
-                border: '1px solid #ddd', 
-                borderRadius: '4px',
-                marginBottom: '10px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <strong>{doc.filename}</strong>
-                  <div style={{ fontSize: '12px', color: '#666' }}>
-                    Type: {doc.file_type} | Size: {formatFileSize(doc.file_size)} | 
-                    Status: {doc.is_processed ? '✅ Processed' : '⏳ Processing'} |
-                    Uploaded: {new Date(doc.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <button
-                  onClick={() => deleteDocument(doc.id)}
-                  style={{
-                    padding: '6px 12px',
-                    background: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
+          {/* Documents panel removed in RAG-only mode */}
         </div>
       )}
 
       {/* Stats Tab */}
       {activeTab === 'stats' && stats && (
         <div>
-          <h2>System Statistics</h2>
-          
+          <h2>Vectorstore Statistics</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
             <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
-              <h3>Knowledge Bases</h3>
-              <div style={{ fontSize: '2em', color: '#007bff' }}>{stats.knowledge_bases}</div>
+              <h3>Collection</h3>
+              <div style={{ fontSize: '1.2em', color: '#007bff' }}>{stats.vectorstore.collection}</div>
             </div>
-            
             <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
-              <h3>Documents</h3>
-              <div style={{ fontSize: '2em', color: '#28a745' }}>{stats.documents}</div>
-            </div>
-            
-            <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
-              <h3>Total Chunks</h3>
-              <div style={{ fontSize: '2em', color: '#ffc107' }}>{stats.embeddings.total_chunks}</div>
-            </div>
-            
-            <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
-              <h3>Embeddings</h3>
-              <div style={{ fontSize: '2em', color: '#17a2b8' }}>{stats.embeddings.chunks_with_embeddings}</div>
-              <div style={{ fontSize: '0.9em', color: '#666' }}>
-                {stats.embeddings.completion_percentage.toFixed(1)}% complete
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '4px' }}>
-            <h3>Embedding Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-              <div>
-                <strong>Chunks with Embeddings:</strong> {stats.embeddings.chunks_with_embeddings}
-              </div>
-              <div>
-                <strong>Chunks without Embeddings:</strong> {stats.embeddings.chunks_without_embeddings}
-              </div>
-              <div>
-                <strong>Completion Percentage:</strong> {stats.embeddings.completion_percentage.toFixed(1)}%
-              </div>
+              <h3>Total Vectors</h3>
+              <div style={{ fontSize: '2em', color: '#28a745' }}>{stats.vectorstore.total_vectors}</div>
             </div>
           </div>
         </div>

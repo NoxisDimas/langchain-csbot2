@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies for build
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -29,9 +29,9 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
-# Health check
+# Health check (use node to perform HTTP request)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+    CMD node -e "require('http').get('http://localhost:3000',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 # Start the application
 CMD ["serve", "-s", "dist", "-l", "3000"]

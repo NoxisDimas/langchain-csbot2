@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
 from app.services.database_service import DatabaseService
 from app.services.document_service import DocumentService
-from app.services.embedding_service import EmbeddingService
+from app.services.vectorstore_service import VectorStoreService
 
 class RAGSystemTester:
     def __init__(self, base_url="http://localhost:8000"):
@@ -155,25 +155,16 @@ class RAGSystemTester:
             print(f"❌ Document services error: {e}")
             return False
     
-    def test_embedding_services(self):
-        """Test embedding services"""
-        print("🔍 Testing embedding services...")
+    def test_vectorstore_services(self):
+        """Test vectorstore services"""
+        print("🔍 Testing vectorstore services...")
         try:
-            embedding_service = EmbeddingService()
-            
-            # Test embedding model initialization
-            if embedding_service.embeddings_model:
-                print("✅ Embedding model initialized")
-            else:
-                print("❌ Embedding model not initialized")
-            
-            # Test stats
-            stats = embedding_service.get_embedding_stats()
-            print(f"✅ Embedding stats: {stats}")
-            
+            vs = VectorStoreService()
+            stats = vs.get_collection_stats()
+            print(f"✅ Vectorstore stats: {stats}")
             return True
         except Exception as e:
-            print(f"❌ Embedding services error: {e}")
+            print(f"❌ Vectorstore services error: {e}")
             return False
     
     def create_test_file(self):
@@ -238,7 +229,7 @@ class RAGSystemTester:
             ("Health Check", self.test_health),
             ("Database Services", self.test_database_services),
             ("Document Services", self.test_document_services),
-            ("Embedding Services", self.test_embedding_services),
+            ("Vectorstore Services", self.test_vectorstore_services),
             ("Knowledge Base Creation", self.test_knowledge_base_creation),
             ("Knowledge Bases List", self.test_knowledge_bases_list),
             ("Stats", self.test_stats),
