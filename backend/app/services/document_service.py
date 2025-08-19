@@ -16,7 +16,6 @@ from app.services.database_service import DatabaseService
 
 class DocumentService:
     def __init__(self):
-        # Legacy DB service no longer required for RAG-only flow
         try:
             self.db_service = DatabaseService()
         except Exception:
@@ -30,11 +29,9 @@ class DocumentService:
         self.upload_dir.mkdir(exist_ok=True)
     
     def get_file_extension(self, filename: str) -> str:
-        """Get file extension from filename"""
         return Path(filename).suffix.lower()
     
     def is_supported_file(self, filename: str) -> bool:
-        """Check if file type is supported"""
         supported_extensions = {
             '.pdf', '.txt', '.md', '.csv', '.xlsx', '.xls', 
             '.docx', '.doc', '.json', '.xml', '.html'
@@ -42,8 +39,6 @@ class DocumentService:
         return self.get_file_extension(filename) in supported_extensions
     
     async def save_uploaded_file(self, file_content: bytes, filename: str) -> str:
-        """Save uploaded file to disk"""
-        # sanitize filename
         safe_name = os.path.basename(filename).replace("..", "").replace("/", "_").replace("\\", "_")
         if not safe_name:
             safe_name = f"upload_{uuid.uuid4().hex}"
@@ -53,8 +48,6 @@ class DocumentService:
         return str(file_path)
 
     def process_file_to_chunks(self, file_content: bytes, filename: str, knowledge_base_name: str = "default") -> List[LangChainDocument]:
-        """Process uploaded file and return LangChain chunks with metadata (RAG-only flow)."""
-        # Save to disk (for audit/debug)
         file_path = None
         try:
             file_path = self.upload_dir / os.path.basename(filename).replace("..", "").replace("/", "_").replace("\\", "_")
@@ -71,13 +64,11 @@ class DocumentService:
             "filename": filename,
             "knowledge_base": knowledge_base_name,
         })
-        # ensure chunk_index in metadata
         for idx, c in enumerate(chunks):
             c.metadata = {**(c.metadata or {}), "chunk_index": idx}
         return chunks
     
     def extract_text_from_pdf(self, file_path: str) -> str:
-        """Extract text from PDF file"""
         try:
             text = ""
             with open(file_path, 'rb') as file:
@@ -90,7 +81,6 @@ class DocumentService:
             return ""
     
     def extract_text_from_docx(self, file_path: str) -> str:
-        """Extract text from DOCX file"""
         try:
             doc = DocxDocument(file_path)
             text = ""
@@ -102,7 +92,6 @@ class DocumentService:
             return ""
     
     def extract_text_from_csv(self, file_path: str) -> str:
-        """Extract text from CSV file"""
         try:
             df = pd.read_csv(file_path)
             return df.to_string()
@@ -111,7 +100,6 @@ class DocumentService:
             return ""
     
     def extract_text_from_excel(self, file_path: str) -> str:
-        """Extract text from Excel file"""
         try:
             df = pd.read_excel(file_path)
             return df.to_string()
@@ -120,13 +108,10 @@ class DocumentService:
             return ""
     
     def extract_text_from_markdown(self, file_path: str) -> str:
-        """Extract text from Markdown file"""
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 md_content = file.read()
-                # Convert markdown to plain text
                 html = markdown.markdown(md_content)
-                # Simple HTML to text conversion
                 import re
                 text = re.sub(r'<[^>]+>', '', html)
                 return text
@@ -135,7 +120,6 @@ class DocumentService:
             return ""
     
     def extract_text_from_txt(self, file_path: str) -> str:
-        """Extract text from TXT file"""
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 return file.read()
@@ -144,9 +128,7 @@ class DocumentService:
             return ""
     
     def extract_text_from_file(self, file_path: str, file_type: str) -> str:
-        """Extract text from file based on file type"""
         file_type = file_type.lower()
-        
         if file_type == '.pdf':
             return self.extract_text_from_pdf(file_path)
         elif file_type == '.docx':
@@ -160,85 +142,18 @@ class DocumentService:
         elif file_type == '.txt':
             return self.extract_text_from_txt(file_path)
         else:
-            # Try as text file
             return self.extract_text_from_txt(file_path)
     
     def chunk_text(self, text: str, metadata: Dict[str, Any] = None) -> List[LangChainDocument]:
-        """Split text into chunks"""
         if not text.strip():
             return []
-        
-        # Create LangChain documents
         docs = [LangChainDocument(page_content=text, metadata=metadata or {})]
-        
-        # Split into chunks
         chunks = self.text_splitter.split_documents(docs)
         return chunks
-    
-    async def process_file(self, file_content: bytes, filename: str, knowledge_base_name: str = "default") -> Optional[Document]:
-        """Process uploaded file and store in database"""
-        try:
-            # Check if file is supported
-            if not self.is_supported_file(filename):
-                raise ValueError(f"Unsupported file type: {self.get_file_extension(filename)}")
-            
-            # Save file to disk
-            file_path = await self.save_uploaded_file(file_content, filename)
-            file_size = len(file_content)
-            file_type = self.get_file_extension(filename)
-            
-            # Extract text from file
-            text_content = self.extract_text_from_file(file_path, file_type)
-            
-            if not text_content.strip():
-                raise ValueError("No text content extracted from file")
-            
-            # Create or get knowledge base (idempotent)
-            kb = self.db_service.get_knowledge_base(knowledge_base_name)
-            if not kb:
-                kb = self.db_service.create_knowledge_base(knowledge_base_name)
-                if not kb:
-                    # If creation failed due to race or uniqueness, attempt to fetch again
-                    kb = self.db_service.get_knowledge_base(knowledge_base_name)
-                    if not kb:
-                        raise ValueError("Failed to create knowledge base")
 
-            # Ensure tables and column migrations are applied for this KB schema
-            try:
-                self.db_service.create_tables(kb.schema_name)
-            except Exception:
-                pass
-            
-            # Create document record
-            with self.db_service.get_session() as session:
-                document = Document(
-                    filename=filename,
-                    file_path=file_path,
-                    file_type=file_type,
-                    file_size=file_size,
-                    content=text_content,
-                    document_metadata=json.dumps({
-                        "knowledge_base": knowledge_base_name,
-                        "processed_at": datetime.utcnow().isoformat(),
-                        "file_type": file_type
-                    }),
-                    is_processed=False
-                )
-                session.add(document)
-                session.commit()
-                session.refresh(document)
-            
-            # Legacy persist disabled in RAG-only mode
+    async def process_file(self, file_content: bytes, filename: str, knowledge_base_name: str = "default") -> Optional[None]:
+        try:
             return None
-            
         except Exception as e:
             print(f"Error processing file: {e}")
             return None
-    
-    def get_document_chunks(self, document_id: str):
-        return []
-    
-    def search_documents(self, query: str, knowledge_base_name: str = None, limit: int = 10) -> List[Dict[str, Any]]:
-        """Search documents by query (placeholder for vector search)"""
-        # This will be implemented with vector search
-        return []

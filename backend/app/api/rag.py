@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from fastapi.responses import JSONResponse
 from typing import List, Optional, Dict, Any
 import uuid
@@ -23,15 +23,6 @@ class KnowledgeBaseResponse(BaseModel):
     description: Optional[str]
     schema_name: str
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-class DocumentResponse(BaseModel):
-    id: str
-    filename: str
-    file_type: str
-    file_size: int
-    is_processed: bool
     created_at: datetime
     updated_at: datetime
 
@@ -142,8 +133,7 @@ async def delete_knowledge_base(kb_name: str):
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
-    knowledge_base: str = Form("default"),
-    background_tasks: BackgroundTasks = None
+    knowledge_base: str = Form("default")
 ):
     """Upload and process a file"""
     try:
@@ -179,26 +169,11 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal error")
 
-async def process_embeddings_background(document_id: str, knowledge_base: str):
-    """Background task to process embeddings"""
-    try:
-        # Get chunks for the document
-        chunks = document_service.get_document_chunks(document_id)
-        if chunks:
-            # Create embeddings
-            embedding_service.update_chunk_embeddings(chunks)
-            print(f"Created embeddings for document {document_id}")
-    except Exception as e:
-        print(f"Error processing embeddings for document {document_id}: {e}")
+## legacy background embedding was removed
 
-@router.get("/documents", response_model=List[DocumentResponse])
-async def list_documents(knowledge_base: Optional[str] = None):
-    """Legacy listing removed in RAG-only; return empty list for compatibility."""
-    return []
+## legacy documents endpoint removed
 
-@router.delete("/documents/{document_id}")
-async def delete_document(document_id: str):
-    raise HTTPException(status_code=410, detail="Legacy document storage removed. Use vectorstore delete with ids.")
+## legacy documents delete removed
 
 @router.post("/search", response_model=List[SearchResponse])
 async def search_documents(req: SearchRequest):
@@ -223,10 +198,7 @@ async def search_documents(req: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Legacy endpoint removed; keep for compatibility and return 410
-@router.post("/process-embeddings")
-async def process_pending_embeddings(req: ProcessEmbeddingsRequest):
-    raise HTTPException(status_code=410, detail="Legacy embedding pipeline removed. Use /api/rag/vector/add for ingestion.")
+# Legacy endpoint removed
 
 @router.get("/stats")
 async def get_stats(collection_name: Optional[str] = None, user_id: Optional[str] = None):
