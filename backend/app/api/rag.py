@@ -8,7 +8,6 @@ from sqlalchemy import text
 
 from app.services.database_service import DatabaseService
 from app.services.document_service import DocumentService
-from app.services.embedding_service import EmbeddingService
 from app.services.vectorstore_service import VectorStoreService
 
 router = APIRouter(prefix="/rag", tags=["RAG System"])

@@ -12,7 +12,6 @@ import markdown
 import uuid
 from datetime import datetime
 
-from app.persistence.models import Document, DocumentEmbedding
 from app.services.database_service import DatabaseService
 
 class DocumentService:

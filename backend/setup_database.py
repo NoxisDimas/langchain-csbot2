@@ -92,9 +92,11 @@ def check_database_status():
         for kb in kbs:
             print(f"   - {kb.name} (schema: {kb.schema_name})")
         
-        # Check documents
-        documents = db_service.get_documents()
-        print(f"📄 Documents: {len(documents)}")
+        # Vectorstore stats
+        from app.services.vectorstore_service import VectorStoreService
+        vs = VectorStoreService()
+        stats = vs.get_collection_stats()
+        print(f"📦 Vectorstore: collection={stats.get('collection')} total_vectors={stats.get('total_vectors')}")
         
         return True
         
