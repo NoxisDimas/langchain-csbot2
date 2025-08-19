@@ -17,7 +17,11 @@ from app.services.database_service import DatabaseService
 
 class DocumentService:
     def __init__(self):
-        self.db_service = DatabaseService()
+        # Legacy DB service no longer required for RAG-only flow
+        try:
+            self.db_service = DatabaseService()
+        except Exception:
+            self.db_service = None
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
@@ -48,6 +52,30 @@ class DocumentService:
         async with aiofiles.open(file_path, 'wb') as f:
             await f.write(file_content)
         return str(file_path)
+
+    def process_file_to_chunks(self, file_content: bytes, filename: str, knowledge_base_name: str = "default") -> List[LangChainDocument]:
+        """Process uploaded file and return LangChain chunks with metadata (RAG-only flow)."""
+        # Save to disk (for audit/debug)
+        file_path = None
+        try:
+            file_path = self.upload_dir / os.path.basename(filename).replace("..", "").replace("/", "_").replace("\\", "_")
+            with open(file_path, 'wb') as f:
+                f.write(file_content)
+        except Exception:
+            pass
+
+        file_type = self.get_file_extension(filename)
+        text_content = self.extract_text_from_file(str(file_path) if file_path else filename, file_type)
+        if not text_content.strip():
+            return []
+        chunks = self.chunk_text(text_content, {
+            "filename": filename,
+            "knowledge_base": knowledge_base_name,
+        })
+        # ensure chunk_index in metadata
+        for idx, c in enumerate(chunks):
+            c.metadata = {**(c.metadata or {}), "chunk_index": idx}
+        return chunks
     
     def extract_text_from_pdf(self, file_path: str) -> str:
         """Extract text from PDF file"""

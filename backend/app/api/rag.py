@@ -78,13 +78,11 @@ class VectorDeleteRequest(BaseModel):
 try:
     db_service = DatabaseService()
     document_service = DocumentService()
-    embedding_service = EmbeddingService()
     vector_service = VectorStoreService()
 except Exception as e:
     print(f"Warning: Failed to initialize database services: {e}")
     db_service = None
     document_service = None
-    embedding_service = None
     vector_service = None
 
 @router.post("/knowledge-bases", response_model=KnowledgeBaseResponse)
@@ -165,24 +163,16 @@ async def upload_file(
         if not file_content:
             raise HTTPException(status_code=400, detail="Empty file")
         
-        # Process file
-        document = await document_service.process_file(file_content, file.filename, knowledge_base)
-        if not document:
-            raise HTTPException(status_code=500, detail="Failed to process file")
-        
-        # Add background task to create embeddings
-        if background_tasks:
-            background_tasks.add_task(
-                process_embeddings_background,
-                str(document.id),
-                knowledge_base
-            )
-        
+        # RAG-only: process to chunks and ingest to vectorstore
+        chunks = document_service.process_file_to_chunks(file_content, file.filename, knowledge_base)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="No text content extracted from file")
+        ids = vector_service.add_documents(chunks)
         return UploadResponse(
-            document_id=str(document.id),
-            filename=document.filename,
+            document_id=ids[0] if ids else str(uuid.uuid4()),
+            filename=file.filename,
             status="uploaded",
-            message="File uploaded and processed successfully. Embeddings will be created in background."
+            message=f"File uploaded and {len(ids)} chunks ingested into vectorstore."
         )
         
     except HTTPException:
@@ -236,78 +226,43 @@ async def delete_document(document_id: str):
 
 @router.post("/search", response_model=List[SearchResponse])
 async def search_documents(req: SearchRequest):
-    """Search documents using vector similarity"""
+    """Search documents using vector similarity (LangChain PGVector only)."""
     try:
         if not req.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
-        
-        # Prefer LangChain PGVector retriever if available, fallback to SQL search
-        user_filter = None  # extend if you pass user context
-        try:
-            docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit)
-            if docs:
-                return [
-                    SearchResponse(
-                        id=doc.metadata.get("id", str(uuid.uuid4())),
-                        chunk_text=doc.page_content,
-                        metadata=doc.metadata,
-                        chunk_index=doc.metadata.get("chunk_index", 0),
-                        filename=doc.metadata.get("filename", ""),
-                        file_type=doc.metadata.get("file_type", ""),
-                        similarity=float(doc.metadata.get("similarity", 0.0)),
-                    )
-                    for doc in docs
-                ]
-        except Exception:
-            pass
-        results = embedding_service.search_similar_chunks(req.query, req.knowledge_base, req.limit)
-        
+        user_filter = None  # extend with authenticated user context
+        docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit)
         return [
             SearchResponse(
-                id=result["id"],
-                chunk_text=result["chunk_text"],
-                metadata=result["metadata"],
-                chunk_index=result["chunk_index"],
-                filename=result["filename"],
-                file_type=result["file_type"],
-                similarity=result["similarity"]
+                id=doc.metadata.get("id", str(uuid.uuid4())),
+                chunk_text=doc.page_content,
+                metadata=doc.metadata,
+                chunk_index=doc.metadata.get("chunk_index", 0),
+                filename=doc.metadata.get("filename", ""),
+                file_type=doc.metadata.get("file_type", ""),
+                similarity=float(doc.metadata.get("similarity", 0.0)),
             )
-            for result in results
+            for doc in docs
         ]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Legacy endpoint removed; keep for compatibility and return 410
 @router.post("/process-embeddings")
 async def process_pending_embeddings(req: ProcessEmbeddingsRequest):
-    """Process all pending embeddings"""
-    try:
-        processed_count = embedding_service.process_pending_embeddings(req.knowledge_base, req.batch_size)
-        return {
-            "message": f"Processed {processed_count} embeddings",
-            "processed_count": processed_count
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=410, detail="Legacy embedding pipeline removed. Use /api/rag/vector/add for ingestion.")
 
 @router.get("/stats")
 async def get_stats(knowledge_base: Optional[str] = None):
-    """Get system statistics"""
+    """Basic stats (legacy embedding stats removed)."""
     try:
-        # Get embedding stats
-        embedding_stats = embedding_service.get_embedding_stats(knowledge_base)
-        
-        # Get knowledge base stats
         kbs = db_service.list_knowledge_bases()
         kb_count = len(kbs)
-        
-        # Get document stats
         documents = db_service.get_documents(knowledge_base)
         doc_count = len(documents)
-        
         return {
             "knowledge_bases": kb_count,
             "documents": doc_count,
-            "embeddings": embedding_stats
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
