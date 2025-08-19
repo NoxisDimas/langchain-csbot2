@@ -5,7 +5,7 @@ pydantic>=2.6.0
 pydantic-settings>=2.2.1
 typing_extensions>=4.9.0
 requests>=2.31.0
- tenacity>=8.2.3
+tenacity>=8.2.3
 
 # LangChain & friends
 langchain>=0.2.7,<0.3.0
@@ -38,7 +38,6 @@ langdetect>=1.0.9
 vaderSentiment>=3.3.2
 
 # Telegram / Email helpers
-python-multipart>=0.0.9
 
 # Testing
 pytest>=8.2.0

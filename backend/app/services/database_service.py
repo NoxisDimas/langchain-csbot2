@@ -164,15 +164,13 @@ class DatabaseService:
             return False
     
     def get_documents(self, knowledge_base_name: str = None) -> List[Document]:
-        """Get documents, optionally filtered by knowledge base"""
+        """Get documents, optionally filtered by knowledge base (by JSON metadata)"""
         with self.get_session() as session:
             query = session.query(Document)
             if knowledge_base_name:
-                kb = self.get_knowledge_base(knowledge_base_name)
-                if kb:
-                    # This would need to be implemented based on your schema structure
-                    pass
-            return query.all()
+                # Filter by knowledge base stored in document_metadata JSON string
+                query = query.filter(Document.document_metadata.contains(f'"knowledge_base": "{knowledge_base_name}"'))
+            return query.order_by(Document.created_at.desc()).all()
     
     def get_document_by_id(self, document_id: str) -> Optional[Document]:
         """Get document by ID"""

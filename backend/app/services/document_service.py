@@ -40,7 +40,11 @@ class DocumentService:
     
     async def save_uploaded_file(self, file_content: bytes, filename: str) -> str:
         """Save uploaded file to disk"""
-        file_path = self.upload_dir / filename
+        # sanitize filename
+        safe_name = os.path.basename(filename).replace("..", "").replace("/", "_").replace("\\", "_")
+        if not safe_name:
+            safe_name = f"upload_{uuid.uuid4().hex}"
+        file_path = self.upload_dir / safe_name
         async with aiofiles.open(file_path, 'wb') as f:
             await f.write(file_content)
         return str(file_path)

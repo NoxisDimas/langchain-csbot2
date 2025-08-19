@@ -28,8 +28,8 @@ class EmbeddingService:
                 base_url=settings.OLLAMA_BASE_URL
             )
         else:
-            # Fallback to OpenAI with default settings
-            return OpenAIEmbeddings()
+            # No embedding provider configured
+            raise RuntimeError("No embedding provider configured. Set OPENAI_API_KEY or OLLAMA_BASE_URL")
     
     def create_embeddings_for_chunks(self, chunks: List[DocumentEmbedding]) -> List[List[float]]:
         """Create embeddings for a list of text chunks"""

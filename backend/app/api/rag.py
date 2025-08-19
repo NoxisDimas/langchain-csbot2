@@ -1,9 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form
 from fastapi.responses import JSONResponse
 from typing import List, Optional, Dict, Any
 import uuid
 from pydantic import BaseModel
 from datetime import datetime
+from sqlalchemy import text
 
 from app.services.database_service import DatabaseService
 from app.services.document_service import DocumentService
@@ -49,6 +50,17 @@ class UploadResponse(BaseModel):
     status: str
     message: str
 
+
+class SearchRequest(BaseModel):
+    query: str
+    knowledge_base: Optional[str] = None
+    limit: int = 5
+
+
+class ProcessEmbeddingsRequest(BaseModel):
+    knowledge_base: Optional[str] = None
+    batch_size: int = 100
+
 # Initialize services
 try:
     db_service = DatabaseService()
@@ -81,7 +93,7 @@ async def create_knowledge_base(kb_data: KnowledgeBaseCreate):
             updated_at=kb.updated_at
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal error")
 
 @router.get("/knowledge-bases", response_model=List[KnowledgeBaseResponse])
 async def list_knowledge_bases():
@@ -101,7 +113,7 @@ async def list_knowledge_bases():
             for kb in kbs
         ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal error")
 
 @router.delete("/knowledge-bases/{kb_name}")
 async def delete_knowledge_base(kb_name: str):
@@ -113,12 +125,12 @@ async def delete_knowledge_base(kb_name: str):
         
         return {"message": f"Knowledge base '{kb_name}' deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal error")
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
-    knowledge_base: str = "default",
+    knowledge_base: str = Form("default"),
     background_tasks: BackgroundTasks = None
 ):
     """Upload and process a file"""
@@ -161,7 +173,7 @@ async def upload_file(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal error")
 
 async def process_embeddings_background(document_id: str, knowledge_base: str):
     """Background task to process embeddings"""
@@ -208,17 +220,13 @@ async def delete_document(document_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/search", response_model=List[SearchResponse])
-async def search_documents(
-    query: str,
-    knowledge_base: Optional[str] = None,
-    limit: int = 5
-):
+async def search_documents(req: SearchRequest):
     """Search documents using vector similarity"""
     try:
-        if not query.strip():
+        if not req.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
         
-        results = embedding_service.search_similar_chunks(query, knowledge_base, limit)
+        results = embedding_service.search_similar_chunks(req.query, req.knowledge_base, req.limit)
         
         return [
             SearchResponse(
@@ -236,13 +244,10 @@ async def search_documents(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/process-embeddings")
-async def process_pending_embeddings(
-    knowledge_base: Optional[str] = None,
-    batch_size: int = 100
-):
+async def process_pending_embeddings(req: ProcessEmbeddingsRequest):
     """Process all pending embeddings"""
     try:
-        processed_count = embedding_service.process_pending_embeddings(knowledge_base, batch_size)
+        processed_count = embedding_service.process_pending_embeddings(req.knowledge_base, req.batch_size)
         return {
             "message": f"Processed {processed_count} embeddings",
             "processed_count": processed_count
@@ -279,7 +284,7 @@ async def health_check():
     try:
         # Test database connection
         with db_service.get_session() as session:
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
         
         return {
             "status": "healthy",
@@ -289,5 +294,5 @@ async def health_check():
                 "embedding_model": "available"
             }
         }
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Service unhealthy")

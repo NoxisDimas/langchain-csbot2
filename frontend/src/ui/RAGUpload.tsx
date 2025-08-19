@@ -42,7 +42,7 @@ interface Stats {
   };
 }
 
-const API_BASE = 'http://localhost:8000/api/rag';
+const API_BASE = (import.meta as any).env?.VITE_API_URL ? `${(import.meta as any).env.VITE_API_URL}/api/rag` : '/api/rag';
 
 export const RAGUpload: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);

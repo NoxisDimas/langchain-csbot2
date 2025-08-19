@@ -20,4 +20,6 @@ def get_embedding_model():
 	"""Return embedding model aligned with selected provider."""
 	if _settings.OPENAI_API_KEY:
 		return OpenAIEmbeddings()
-	return OllamaEmbeddings(base_url=_settings.OLLAMA_BASE_URL, model=_settings.OLLAMA_EMBED_MODEL)
+	if _settings.OLLAMA_BASE_URL:
+		return OllamaEmbeddings(base_url=_settings.OLLAMA_BASE_URL, model=_settings.OLLAMA_EMBED_MODEL)
+	raise RuntimeError("No embedding provider configured. Set OPENAI_API_KEY or OLLAMA_BASE_URL")
