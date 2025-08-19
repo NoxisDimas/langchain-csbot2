@@ -56,7 +56,7 @@ export const RAGUpload: React.FC = () => {
   // Load initial data
   useEffect(() => {
     loadKnowledgeBases();
-    loadDocuments();
+    // documents panel removed; skip load
     loadStats();
   }, []);
 
@@ -69,15 +69,7 @@ export const RAGUpload: React.FC = () => {
     }
   };
 
-  const loadDocuments = async () => {
-    try {
-      const response = await axios.get(`${API_BASE}/documents`);
-      setDocuments(response.data || []);
-    } catch (error) {
-      console.error('Error loading documents:', error);
-      setDocuments([]);
-    }
-  };
+  const loadDocuments = async () => { setDocuments([]); };
 
   const loadStats = async () => {
     try {
@@ -121,8 +113,7 @@ export const RAGUpload: React.FC = () => {
       setUploadMessage(`✅ Uploaded ${successCount} file(s)` + (failCount ? `, ❌ failed ${failCount}` : ''));
       setSelectedFiles([]);
 
-      // Reload documents and stats
-      loadDocuments();
+      // Reload stats
       loadStats();
 
       // Reset file input
@@ -482,43 +473,7 @@ export const RAGUpload: React.FC = () => {
             ))}
           </div>
 
-          {/* Documents List */}
-          <div>
-            <h3>Documents</h3>
-            
-            {documents.map(doc => (
-              <div key={doc.id} style={{ 
-                padding: '15px', 
-                border: '1px solid #ddd', 
-                borderRadius: '4px',
-                marginBottom: '10px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <strong>{doc.filename}</strong>
-                  <div style={{ fontSize: '12px', color: '#666' }}>
-                    Type: {doc.file_type} | Size: {formatFileSize(doc.file_size)} | 
-                    Uploaded: {new Date(doc.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <button
-                  onClick={() => deleteDocument(doc.id)}
-                  style={{
-                    padding: '6px 12px',
-                    background: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
+          {/* Documents panel removed in RAG-only mode */}
         </div>
       )}
 

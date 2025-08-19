@@ -85,15 +85,14 @@ rag-system/
 ### 🌐 API Endpoints
 
 #### RAG API (`api/rag.py`)
-- `POST /api/rag/upload` - Upload and process documents
+- `POST /api/rag/upload` - Upload dan ingest chunks ke vectorstore
 - `GET /api/rag/knowledge-bases` - List knowledge bases
 - `POST /api/rag/knowledge-bases` - Create knowledge base
 - `DELETE /api/rag/knowledge-bases/{name}` - Delete knowledge base
-- `GET /api/rag/documents` - List documents
-- `DELETE /api/rag/documents/{id}` - Delete document
+- (Legacy documents endpoints removed in RAG-only mode)
 - `POST /api/rag/search` - Search documents
 - `GET /api/rag/stats` - System statistics
-- `POST /api/rag/process-embeddings` - Process pending embeddings
+- (Legacy process-embeddings endpoint removed)
 - `GET /api/rag/health` - Health check
 
 ### 🎨 Frontend Components
@@ -111,33 +110,7 @@ rag-system/
 - Tabbed interface for different functions
 
 ### 🗄️ Database Models
-
-#### Document Model
-```python
-class Document(Base):
-    id = Column(UUID, primary_key=True)
-    filename = Column(String)
-    file_path = Column(String)
-    file_type = Column(String)
-    file_size = Column(Integer)
-    content = Column(Text)
-    metadata = Column(Text)  # JSON string
-    is_processed = Column(Boolean)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
-```
-
-#### Document Embedding Model
-```python
-class DocumentEmbedding(Base):
-    id = Column(UUID, primary_key=True)
-    document_id = Column(UUID, ForeignKey("documents.id"))
-    chunk_index = Column(Integer)
-    chunk_text = Column(Text)
-    embedding = Column("embedding", Float)  # Vector column
-    metadata = Column(Text)  # JSON string
-    created_at = Column(DateTime)
-```
+RAG-only: penyimpanan dokumen/embeddings dikelola oleh LangChain PGVector; model SQLAlchemy lokal untuk dokumen/embeddings telah dihapus.
 
 #### Knowledge Base Model
 ```python
