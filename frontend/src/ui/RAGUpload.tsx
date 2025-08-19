@@ -16,7 +16,6 @@ interface Document {
   filename: string;
   file_type: string;
   file_size: number;
-  is_processed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -73,9 +72,10 @@ export const RAGUpload: React.FC = () => {
   const loadDocuments = async () => {
     try {
       const response = await axios.get(`${API_BASE}/documents`);
-      setDocuments(response.data);
+      setDocuments(response.data || []);
     } catch (error) {
       console.error('Error loading documents:', error);
+      setDocuments([]);
     }
   };
 
@@ -406,7 +406,7 @@ export const RAGUpload: React.FC = () => {
           <h2>Manage Knowledge Base</h2>
           
           {/* Create New Knowledge Base */}
-          <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '4px' }}>
+          <div style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px' }}>
             <h3>Create New Knowledge Base</h3>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'end' }}>
               <div>

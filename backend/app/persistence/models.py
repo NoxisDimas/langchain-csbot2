@@ -5,7 +5,6 @@ from typing import Optional
 from app.config import get_settings
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from pgvector.sqlalchemy import Vector
 
 
 settings = get_settings()
@@ -54,42 +53,6 @@ class SensitiveData(Base):
 	@staticmethod
 	def ttl_from_now(hours: int) -> datetime:
 		return datetime.utcnow() + timedelta(hours=hours)
-
-
-class Document(Base):
-    __tablename__ = "documents"
-    
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    file_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
-    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    document_metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string - renamed from metadata
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_processed: Mapped[bool] = mapped_column(Boolean, default=False)
-    
-    # Relationship with embeddings
-    embeddings: Mapped[list["DocumentEmbedding"]] = relationship("DocumentEmbedding", back_populates="document", cascade="all, delete-orphan")
-
-
-class DocumentEmbedding(Base):
-    __tablename__ = "document_embeddings"
-    
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
-    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
-    chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
-    # Allow NULL initially; embeddings are computed asynchronously after chunks are inserted
-    # Use pgvector with a flexible dimension. If you use a fixed model, set Vector(<dim>)
-    embedding: Mapped[Optional[list]] = mapped_column("embedding", Vector(), nullable=True)
-    embedding_metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string - renamed from metadata
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    
-    # Relationship with document
-    document: Mapped[Document] = relationship("Document", back_populates="embeddings")
-
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"

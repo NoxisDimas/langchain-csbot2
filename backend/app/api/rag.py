@@ -194,35 +194,12 @@ async def process_embeddings_background(document_id: str, knowledge_base: str):
 
 @router.get("/documents", response_model=List[DocumentResponse])
 async def list_documents(knowledge_base: Optional[str] = None):
-    """List all documents"""
-    try:
-        documents = db_service.get_documents(knowledge_base)
-        return [
-            DocumentResponse(
-                id=str(doc.id),
-                filename=doc.filename,
-                file_type=doc.file_type,
-                file_size=doc.file_size,
-                is_processed=doc.is_processed,
-                created_at=doc.created_at,
-                updated_at=doc.updated_at
-            )
-            for doc in documents
-        ]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Legacy listing removed in RAG-only; return empty list for compatibility."""
+    return []
 
 @router.delete("/documents/{document_id}")
 async def delete_document(document_id: str):
-    """Delete a document"""
-    try:
-        success = db_service.delete_document(document_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Document not found")
-        
-        return {"message": "Document deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=410, detail="Legacy document storage removed. Use vectorstore delete with ids.")
 
 @router.post("/search", response_model=List[SearchResponse])
 async def search_documents(req: SearchRequest):
