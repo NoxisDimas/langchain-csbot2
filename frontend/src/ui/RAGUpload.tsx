@@ -63,11 +63,17 @@ export const RAGUpload: React.FC = () => {
   const loadKnowledgeBases = async () => {
     try {
       const response = await axios.get(`${API_BASE}/knowledge-bases`);
-      setKnowledgeBases(response.data);
+      // Pastikan array
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.knowledge_bases || [];
+      setKnowledgeBases(data);
     } catch (error) {
       console.error('Error loading knowledge bases:', error);
+      setKnowledgeBases([]); // fallback biar gak error
     }
   };
+
 
   const loadDocuments = async () => { setDocuments([]); };
 

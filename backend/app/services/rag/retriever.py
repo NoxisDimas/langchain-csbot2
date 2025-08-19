@@ -39,4 +39,4 @@ def retrieve_knowledge(query_text: str) -> List[Document]:
 	# lang = detect_language(query_text)
 	q = query_text
 	retriever = vs.as_retriever(search_kwargs={"k": 5})
-	return retriever.get_relevant_documents(q)
+	return retriever.invoke(q)

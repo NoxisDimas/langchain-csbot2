@@ -47,7 +47,7 @@ def retrieve_memory(session_id: str, query_text: str, k: int = 4) -> List[Docume
 	q = query_text if lang == "en" else translate_text(query_text, "en")
 	retriever = vs.as_retriever(search_kwargs={"k": k, "filter": {"session_id": {"$eq": session_id}}})
 	try:
-		return retriever.get_relevant_documents(q)
+		return retriever.invoke(q)
 	except Exception:
 		# Fallback without filter if backend doesn't support it
 		docs = retriever.get_relevant_documents(q)

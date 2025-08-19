@@ -57,17 +57,18 @@ class DatabaseService:
         """Create tables for KnowledgeBase only (RAG via LangChain manages its own tables)"""
         try:
             with self.engine.connect() as conn:
-                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {settings.DB_SCHEMA}"))
+                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
                 conn.commit()
             metadata = Base.metadata
-            kb_table = metadata.tables.get(f"{settings.DB_SCHEMA}.knowledge_bases") or metadata.tables.get("knowledge_bases")
+            kb_table = metadata.tables.get("knowledge_bases")
             if kb_table is not None:
-                kb_table.schema = settings.DB_SCHEMA
+                kb_table.schema = schema_name
             metadata.create_all(bind=self.engine)
             return True
         except Exception as e:
             print(f"Error creating tables: {e}")
             return False
+
     
     def get_knowledge_base(self, name: str) -> Optional[KnowledgeBase]:
         """Get knowledge base by name"""
