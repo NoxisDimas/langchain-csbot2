@@ -162,12 +162,15 @@ class DocumentService:
             if not text_content.strip():
                 raise ValueError("No text content extracted from file")
             
-            # Create or get knowledge base
+            # Create or get knowledge base (idempotent)
             kb = self.db_service.get_knowledge_base(knowledge_base_name)
             if not kb:
                 kb = self.db_service.create_knowledge_base(knowledge_base_name)
                 if not kb:
-                    raise ValueError("Failed to create knowledge base")
+                    # If creation failed due to race or uniqueness, attempt to fetch again
+                    kb = self.db_service.get_knowledge_base(knowledge_base_name)
+                    if not kb:
+                        raise ValueError("Failed to create knowledge base")
             
             # Create document record
             with self.db_service.get_session() as session:

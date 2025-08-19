@@ -66,7 +66,10 @@ async def create_knowledge_base(kb_data: KnowledgeBaseCreate):
     try:
         kb = db_service.create_knowledge_base(kb_data.name, kb_data.description)
         if not kb:
-            raise HTTPException(status_code=400, detail="Failed to create knowledge base")
+            # If creation failed (possibly due to unique constraint), return existing if it exists
+            kb = db_service.get_knowledge_base(kb_data.name)
+            if not kb:
+                raise HTTPException(status_code=400, detail="Failed to create knowledge base")
         
         return KnowledgeBaseResponse(
             id=str(kb.id),

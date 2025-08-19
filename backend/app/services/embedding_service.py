@@ -5,7 +5,7 @@ from sqlalchemy import text
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import OllamaEmbeddings
 from app.services.database_service import DatabaseService
-from app.persistence.models import DocumentEmbedding
+from app.persistence.models import DocumentEmbedding, Document
 from app.config import get_settings
 
 settings = get_settings()
@@ -17,15 +17,15 @@ class EmbeddingService:
     
     def _initialize_embeddings_model(self):
         """Initialize embeddings model based on configuration"""
-        if settings.openai_api_key:
+        if settings.OPENAI_API_KEY:
             return OpenAIEmbeddings(
-                openai_api_key=settings.openai_api_key,
+                openai_api_key=settings.OPENAI_API_KEY,
                 model="text-embedding-3-small"
             )
-        elif settings.ollama_base_url:
+        elif settings.OLLAMA_BASE_URL:
             return OllamaEmbeddings(
-                model="llama2",
-                base_url=settings.ollama_base_url
+                model=settings.OLLAMA_EMBED_MODEL,
+                base_url=settings.OLLAMA_BASE_URL
             )
         else:
             # Fallback to OpenAI with default settings
@@ -69,22 +69,11 @@ class EmbeddingService:
             # Update database with embeddings
             with self.db_service.get_session() as session:
                 for chunk, embedding in zip(chunks, embeddings):
-                    # Convert embedding to PostgreSQL vector format
-                    embedding_str = f"[{','.join(map(str, embedding))}]"
-                    
-                    # Update the chunk with embedding
-                    session.execute(
-                        text("""
-                            UPDATE document_embeddings 
-                            SET embedding = :embedding::vector 
-                            WHERE id = :chunk_id
-                        """),
-                        {
-                            "embedding": embedding_str,
-                            "chunk_id": chunk.id
-                        }
-                    )
-                
+                    session.query(DocumentEmbedding).filter(
+                        DocumentEmbedding.id == chunk.id
+                    ).update({
+                        DocumentEmbedding.embedding: embedding
+                    }, synchronize_session=False)
                 session.commit()
                 return True
                 
