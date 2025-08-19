@@ -1,5 +1,6 @@
 from typing import Dict, Any
 from app.services.langgraph.graph import get_compiled_graph
+from app.services.memory.vector_memory import add_memory, retrieve_memory
 from app.persistence.repositories import ConversationRepository
 from app.utils.lang import detect_language, translate_to_language
 from app.utils.pii import mask_pii
@@ -22,6 +23,11 @@ def run_conversation(session_id: str, message: str, channel: str, user_meta: Dic
 	masked_message, redactions = mask_pii(message)
 
 	_repo.add_message(conversation_id=conv.id, role="user", content=masked_message, pii_redactions=redactions)
+	# Persist memory to vectorstore as well
+	try:
+		add_memory(session_id=session_id, role="user", content=masked_message)
+	except Exception:
+		pass
 
 	user_lang = detect_language(masked_message) or locale
 
@@ -41,12 +47,27 @@ def run_conversation(session_id: str, message: str, channel: str, user_meta: Dic
 		"order_id": None,
 	}
 
+	# Optionally retrieve recent memory context to enrich graph input
+	try:
+		mem_docs = retrieve_memory(session_id=session_id, query_text=masked_message, k=4)
+		if mem_docs:
+			graph_input["conversation_history"] = (
+				[{"type": "human" if d.metadata.get("role") == "user" else "ai", "content": d.page_content} for d in mem_docs]
+				+ graph_input["conversation_history"]
+			)[:20]
+	except Exception:
+		pass
+
 	final_state = _graph.invoke(graph_input, config={"configurable": {"thread_id": session_id}})
 
 	answer_raw = final_state.get("assistant_response", "")
 	answer = translate_to_language(answer_raw, target_lang=user_lang)
 
 	_repo.add_message(conversation_id=conv.id, role="assistant", content=answer, pii_redactions=[])
+	try:
+		add_memory(session_id=session_id, role="assistant", content=answer)
+	except Exception:
+		pass
 
 	# Handover notify if needed
 	if final_state.get("handoff_to_human"):

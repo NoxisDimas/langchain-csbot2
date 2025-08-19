@@ -9,6 +9,7 @@ from sqlalchemy import text
 from app.services.database_service import DatabaseService
 from app.services.document_service import DocumentService
 from app.services.embedding_service import EmbeddingService
+from app.services.vectorstore_service import VectorStoreService
 
 router = APIRouter(prefix="/rag", tags=["RAG System"])
 
@@ -61,16 +62,30 @@ class ProcessEmbeddingsRequest(BaseModel):
     knowledge_base: Optional[str] = None
     batch_size: int = 100
 
+
+class VectorAddRequest(BaseModel):
+    texts: List[str]
+    user_id: str
+    collection_name: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class VectorDeleteRequest(BaseModel):
+    ids: List[str]
+    collection_name: Optional[str] = None
+
 # Initialize services
 try:
     db_service = DatabaseService()
     document_service = DocumentService()
     embedding_service = EmbeddingService()
+    vector_service = VectorStoreService()
 except Exception as e:
     print(f"Warning: Failed to initialize database services: {e}")
     db_service = None
     document_service = None
     embedding_service = None
+    vector_service = None
 
 @router.post("/knowledge-bases", response_model=KnowledgeBaseResponse)
 async def create_knowledge_base(kb_data: KnowledgeBaseCreate):
@@ -226,6 +241,25 @@ async def search_documents(req: SearchRequest):
         if not req.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
         
+        # Prefer LangChain PGVector retriever if available, fallback to SQL search
+        user_filter = None  # extend if you pass user context
+        try:
+            docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit)
+            if docs:
+                return [
+                    SearchResponse(
+                        id=doc.metadata.get("id", str(uuid.uuid4())),
+                        chunk_text=doc.page_content,
+                        metadata=doc.metadata,
+                        chunk_index=doc.metadata.get("chunk_index", 0),
+                        filename=doc.metadata.get("filename", ""),
+                        file_type=doc.metadata.get("file_type", ""),
+                        similarity=float(doc.metadata.get("similarity", 0.0)),
+                    )
+                    for doc in docs
+                ]
+        except Exception:
+            pass
         results = embedding_service.search_similar_chunks(req.query, req.knowledge_base, req.limit)
         
         return [
@@ -296,3 +330,35 @@ async def health_check():
         }
     except Exception:
         raise HTTPException(status_code=503, detail="Service unhealthy")
+
+
+# --- VectorStore CRUD (LangChain PGVector) ---
+@router.post("/vector/add")
+async def vector_add(req: VectorAddRequest):
+    try:
+        if not vector_service:
+            raise HTTPException(status_code=503, detail="Vector service unavailable")
+        ids = vector_service.add_texts(
+            texts=req.texts,
+            user_id=req.user_id,
+            collection_name=req.collection_name,
+            base_metadata=req.metadata or {},
+        )
+        return {"inserted": len(ids), "ids": ids}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal error")
+
+
+@router.post("/vector/delete")
+async def vector_delete(req: VectorDeleteRequest):
+    try:
+        if not vector_service:
+            raise HTTPException(status_code=503, detail="Vector service unavailable")
+        vector_service.delete_ids(req.ids, collection_name=req.collection_name)
+        return {"deleted": len(req.ids)}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal error")
