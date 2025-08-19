@@ -171,6 +171,12 @@ class DocumentService:
                     kb = self.db_service.get_knowledge_base(knowledge_base_name)
                     if not kb:
                         raise ValueError("Failed to create knowledge base")
+
+            # Ensure tables and column migrations are applied for this KB schema
+            try:
+                self.db_service.create_tables(kb.schema_name)
+            except Exception:
+                pass
             
             # Create document record
             with self.db_service.get_session() as session:
