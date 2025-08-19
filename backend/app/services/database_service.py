@@ -3,7 +3,7 @@ import json
 from typing import Optional, List, Dict, Any
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, IntegrityError
 from app.config import get_settings
 from app.persistence.models import Base, Document, DocumentEmbedding, KnowledgeBase
 import uuid
@@ -67,10 +67,29 @@ class DatabaseService:
             
             # Create tables with schema prefix
             metadata = Base.metadata
+            # Only set schema for tenant-specific tables
             for table in metadata.tables.values():
-                table.schema = schema_name
-            
+                if table.name in ("documents", "document_embeddings"):
+                    table.schema = schema_name
+            # Ensure global tables like knowledge_bases stay in default app schema
+            kb_table = metadata.tables.get(f"{settings.DB_SCHEMA}.knowledge_bases") or metadata.tables.get("knowledge_bases")
+            if kb_table is not None:
+                kb_table.schema = settings.DB_SCHEMA
             metadata.create_all(bind=self.engine)
+
+            # Compatibility: ensure embedding column is pgvector and nullable
+            with self.engine.connect() as conn:
+                try:
+                    conn.execute(text(f"ALTER TABLE {schema_name}.document_embeddings ALTER COLUMN embedding DROP NOT NULL"))
+                except Exception:
+                    pass
+                try:
+                    # If current type isn't vector, recreate column safely when empty
+                    conn.execute(text(f"ALTER TABLE {schema_name}.document_embeddings DROP COLUMN IF EXISTS embedding"))
+                    conn.execute(text(f"ALTER TABLE {schema_name}.document_embeddings ADD COLUMN IF NOT EXISTS embedding vector"))
+                except Exception:
+                    pass
+                conn.commit()
             return True
         except Exception as e:
             print(f"Error creating tables: {e}")
@@ -103,7 +122,15 @@ class DatabaseService:
                     schema_name=schema_name
                 )
                 session.add(kb)
-                session.commit()
+                try:
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+                    # Another process created it; fetch and return
+                    kb = session.query(KnowledgeBase).filter(KnowledgeBase.name == name).first()
+                    if kb:
+                        return kb
+                    raise
                 session.refresh(kb)
                 return kb
         except Exception as e:

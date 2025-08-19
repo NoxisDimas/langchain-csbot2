@@ -45,7 +45,7 @@ interface Stats {
 const API_BASE = 'http://localhost:8000/api/rag';
 
 export const RAGUpload: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [selectedKnowledgeBase, setSelectedKnowledgeBase] = useState<string>('default');
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -93,16 +93,16 @@ export const RAGUpload: React.FC = () => {
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    if (files.length > 0) {
+      setSelectedFiles(files);
       setUploadMessage('');
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setUploadMessage('Please select a file first');
+    if (selectedFiles.length === 0) {
+      setUploadMessage('Please select at least one file');
       return;
     }
 
@@ -110,27 +110,28 @@ export const RAGUpload: React.FC = () => {
     setUploadMessage('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('knowledge_base', selectedKnowledgeBase);
-
-      const response = await axios.post(`${API_BASE}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const uploads = selectedFiles.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('knowledge_base', selectedKnowledgeBase);
+        return axios.post(`${API_BASE}/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
       });
 
-      setUploadMessage(`✅ ${response.data.message}`);
-      setSelectedFile(null);
-      
-      // Reload documents
+      const results = await Promise.allSettled(uploads);
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      const failCount = results.length - successCount;
+      setUploadMessage(`✅ Uploaded ${successCount} file(s)` + (failCount ? `, ❌ failed ${failCount}` : ''));
+      setSelectedFiles([]);
+
+      // Reload documents and stats
       loadDocuments();
       loadStats();
-      
+
       // Reset file input
       const fileInput = document.getElementById('file-input') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-      
     } catch (error: any) {
       setUploadMessage(`❌ Error: ${error.response?.data?.detail || error.message}`);
     } finally {
@@ -283,18 +284,27 @@ export const RAGUpload: React.FC = () => {
           {/* File Upload */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Select File:
+              Select File(s):
             </label>
             <input
               id="file-input"
               type="file"
               onChange={handleFileSelect}
+              multiple
               accept=".pdf,.txt,.md,.csv,.xlsx,.xls,.docx,.doc,.json,.xml,.html"
               style={{ padding: '8px', width: '300px' }}
             />
-            {selectedFile && (
+            {selectedFiles.length > 0 && (
               <div style={{ marginTop: '10px', color: '#666' }}>
-                Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                Selected: {selectedFiles.length} file(s)
+                <ul style={{ marginTop: 6 }}>
+                  {selectedFiles.slice(0, 5).map((f) => (
+                    <li key={f.name}>
+                      {f.name} ({formatFileSize(f.size)})
+                    </li>
+                  ))}
+                  {selectedFiles.length > 5 && <li>and {selectedFiles.length - 5} more...</li>}
+                </ul>
               </div>
             )}
           </div>
@@ -302,7 +312,7 @@ export const RAGUpload: React.FC = () => {
           {/* Upload Button */}
           <button
             onClick={handleUpload}
-            disabled={uploading || !selectedFile}
+            disabled={uploading || selectedFiles.length === 0}
             style={{
               padding: '12px 24px',
               background: uploading ? '#ccc' : '#007bff',
@@ -313,7 +323,7 @@ export const RAGUpload: React.FC = () => {
               fontSize: '16px'
             }}
           >
-            {uploading ? 'Uploading...' : 'Upload File'}
+            {uploading ? 'Uploading...' : 'Upload File(s)'}
           </button>
 
           {/* Upload Message */}

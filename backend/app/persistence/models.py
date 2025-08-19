@@ -1,10 +1,11 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Boolean, JSON, Float
+from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Boolean, JSON
 from datetime import datetime, timedelta
 from typing import Optional
 from app.config import get_settings
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from pgvector.sqlalchemy import Vector
 
 
 settings = get_settings()
@@ -80,7 +81,9 @@ class DocumentEmbedding(Base):
     document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[float] = mapped_column("embedding", Float, nullable=False)  # This will be a vector column
+    # Allow NULL initially; embeddings are computed asynchronously after chunks are inserted
+    # Use pgvector with a flexible dimension. If you use a fixed model, set Vector(<dim>)
+    embedding: Mapped[Optional[list]] = mapped_column("embedding", Vector(), nullable=True)
     embedding_metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string - renamed from metadata
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
@@ -90,6 +93,7 @@ class DocumentEmbedding(Base):
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
+    __table_args__ = {"schema": settings.DB_SCHEMA}
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
