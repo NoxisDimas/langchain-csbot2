@@ -253,16 +253,12 @@ async def process_pending_embeddings(req: ProcessEmbeddingsRequest):
     raise HTTPException(status_code=410, detail="Legacy embedding pipeline removed. Use /api/rag/vector/add for ingestion.")
 
 @router.get("/stats")
-async def get_stats(knowledge_base: Optional[str] = None):
-    """Basic stats (legacy embedding stats removed)."""
+async def get_stats(collection_name: Optional[str] = None, user_id: Optional[str] = None):
+    """Vectorstore-centric stats."""
     try:
-        kbs = db_service.list_knowledge_bases()
-        kb_count = len(kbs)
-        documents = db_service.get_documents(knowledge_base)
-        doc_count = len(documents)
+        vs_stats = vector_service.get_collection_stats(collection_name=collection_name, user_id=user_id)
         return {
-            "knowledge_bases": kb_count,
-            "documents": doc_count,
+            "vectorstore": vs_stats,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from langchain.schema import Document
 from app.config import get_settings
 from app.services.llm.provider import get_embedding_model
+from sqlalchemy import create_engine, text
 
 try:
 	from langchain_postgres import PGVector
@@ -29,6 +30,29 @@ class VectorStoreService:
 			connection=_settings.DATABASE_URL,
 			collection_name=(collection_name or self._default_collection),
 		)
+
+	def get_collection_stats(self, collection_name: Optional[str] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
+		"""Return simple stats for a collection (total vectors; optionally filtered by user_id)."""
+		engine = create_engine(_settings.DATABASE_URL)
+		with engine.connect() as conn:
+			# Resolve collection id
+			cid = None
+			if collection_name:
+				row = conn.execute(text("SELECT uuid FROM langchain_pg_collection WHERE name = :name"), {"name": collection_name}).fetchone()
+				if row:
+					cid = row[0]
+			else:
+				row = conn.execute(text("SELECT uuid FROM langchain_pg_collection WHERE name = :name"), {"name": self._default_collection}).fetchone()
+				if row:
+					cid = row[0]
+			if not cid:
+				return {"collection": collection_name or self._default_collection, "total_vectors": 0}
+			params: Dict[str, Any] = {"cid": cid}
+			if user_id:
+				cnt = conn.execute(text("SELECT COUNT(*) FROM langchain_pg_embedding WHERE collection_id = :cid AND (cmetadata->>'user_id') = :uid"), {"cid": cid, "uid": user_id}).scalar()
+			else:
+				cnt = conn.execute(text("SELECT COUNT(*) FROM langchain_pg_embedding WHERE collection_id = :cid"), params).scalar()
+			return {"collection": collection_name or self._default_collection, "total_vectors": int(cnt or 0)}
 
 	def add_texts(
 		self,
