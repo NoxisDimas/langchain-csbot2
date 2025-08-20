@@ -1,12 +1,9 @@
 from typing import List
-from langchain.schema import Document
+from langchain_core.documents import Document
 from app.services.llm.provider import get_embedding_model
 from app.config import get_settings
-
-try:
-	from langchain_postgres import PGVector
-except Exception:
-	PGVector = None  # type: ignore
+from app.utils.lang import detect_language, translate_text
+from langchain_postgres import PGVector
 
 
 _settings = get_settings()

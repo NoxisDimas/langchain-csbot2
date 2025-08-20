@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from langchain.schema import Document
+from langchain_core.documents import Document
 from app.config import get_settings
 from app.services.llm.provider import get_embedding_model
 from sqlalchemy import create_engine, text

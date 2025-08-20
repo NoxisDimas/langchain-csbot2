@@ -4,8 +4,8 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import aiofiles
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document as LangChainDocument
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document as LangChainDocument
 import pypdf
 from docx import Document as DocxDocument
 import markdown

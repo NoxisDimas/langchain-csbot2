@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional
-from langchain.tools import tool
+from langchain_core.tools import tool
 from app.services.ecommerce.registry import get_active_ecommerce
 from app.services.rag.retriever import retrieve_knowledge
 from app.utils.sentiment import compute_sentiment

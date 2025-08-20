@@ -1,5 +1,5 @@
 from typing import List
-from langchain.schema import Document
+from langchain_core.documents import Document
 from app.services.llm.provider import get_embedding_model
 from app.config import get_settings
 from app.utils.lang import detect_language, translate_text
