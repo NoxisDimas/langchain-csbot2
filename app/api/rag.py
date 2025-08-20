@@ -158,7 +158,10 @@ async def upload_file(
         chunks = document_service.process_file_to_chunks(file_content, file.filename, knowledge_base)
         if not chunks:
             raise HTTPException(status_code=400, detail="No text content extracted from file")
-        ids = vector_service.add_documents(chunks, collection_name=settings.DB_SCHEMA)
+        
+        # Use knowledge_base parameter as collection name, fallback to DB_SCHEMA
+        collection_name = knowledge_base if knowledge_base and knowledge_base.strip() else settings.DB_SCHEMA
+        ids = vector_service.add_documents(chunks, collection_name=collection_name)
         return UploadResponse(
             document_id=ids[0] if ids else str(uuid.uuid4()),
             filename=file.filename,
@@ -184,7 +187,9 @@ async def search_documents(req: SearchRequest):
         if not req.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
         user_filter = None  # extend with authenticated user context
-        docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit, collection_name=settings.DB_SCHEMA)
+        # Use knowledge_base parameter as collection name, fallback to DB_SCHEMA
+        collection_name = req.knowledge_base if req.knowledge_base and req.knowledge_base.strip() else settings.DB_SCHEMA
+        docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit, collection_name=collection_name)
         return [
             SearchResponse(
                 id=doc.metadata.get("id", str(uuid.uuid4())),
