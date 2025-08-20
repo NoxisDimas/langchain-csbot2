@@ -9,6 +9,7 @@ from sqlalchemy import text
 from app.services.database_service import DatabaseService
 from app.services.document_service import DocumentService
 from app.services.vectorstore_service import VectorStoreService
+from app.config import get_settings
 
 router = APIRouter(prefix="/rag", tags=["RAG System"])
 
@@ -65,6 +66,7 @@ class VectorDeleteRequest(BaseModel):
     collection_name: Optional[str] = None
 
 # Initialize services
+settings = get_settings()
 try:
     db_service = DatabaseService()
     document_service = DocumentService()
@@ -156,7 +158,7 @@ async def upload_file(
         chunks = document_service.process_file_to_chunks(file_content, file.filename, knowledge_base)
         if not chunks:
             raise HTTPException(status_code=400, detail="No text content extracted from file")
-        ids = vector_service.add_documents(chunks)
+        ids = vector_service.add_documents(chunks, collection_name=settings.DB_SCHEMA)
         return UploadResponse(
             document_id=ids[0] if ids else str(uuid.uuid4()),
             filename=file.filename,
