@@ -184,7 +184,7 @@ async def search_documents(req: SearchRequest):
         if not req.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
         user_filter = None  # extend with authenticated user context
-        docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit)
+        docs = vector_service.search(query=req.query, user_id=user_filter, k=req.limit, collection_name=settings.DB_SCHEMA)
         return [
             SearchResponse(
                 id=doc.metadata.get("id", str(uuid.uuid4())),
