@@ -1,0 +1,26 @@
+Masalah Umum dan Solusinya:
+
+1. Saya tidak bisa login:
+   - Pastikan Anda memasukkan email dan kata sandi dengan benar.
+   - Periksa apakah tombol Caps Lock aktif.
+   - Gunakan fitur "Lupa Password" untuk mereset kata sandi.
+   - Jika masih gagal, hubungi customer service dengan menyebutkan email Anda.
+
+2. Saya tidak menerima email konfirmasi pesanan:
+   - Periksa folder spam atau promosi di kotak masuk email Anda.
+   - Tunggu 5–10 menit setelah konfirmasi.
+   - Jika belum ada, silakan hubungi layanan pelanggan untuk dikirim ulang.
+
+3. Pesanan saya tidak muncul saat dicek:
+   - Pastikan Anda mengetikkan nomor pesanan atau nama sesuai yang terdaftar.
+   - Jika menggunakan nama, hindari singkatan atau nama panggilan.
+   - Hubungi customer service jika pesanan belum muncul dalam 10 menit setelah konfirmasi pembayaran.
+
+4. Saya tidak bisa mengunggah bukti pembayaran:
+   - Pastikan ukuran file tidak melebihi 2MB.
+   - Gunakan format gambar JPG atau PNG.
+   - Coba gunakan browser lain jika tetap tidak berhasil.
+
+5. Produk tidak bisa ditambahkan ke keranjang:
+   - Coba refresh halaman.
+   - Pastikan produk masih tersedia dan belum habis stok.
