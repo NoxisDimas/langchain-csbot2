@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 	OLLAMA_BASE_URL: str = "http://localhost:11434"
 	OLLAMA_MODEL: str = "llama3.1:8b-instruct"
 	OLLAMA_EMBED_MODEL: str = "nomic-embed-text"
+	GROQ_API_KEY: Optional[str] = None
 
 	# DB
 	DATABASE_URL: Optional[str] = None
