@@ -49,7 +49,7 @@ def _create_agent_with_fallback(system: str, tools: list, temperature: float = 0
 	try:
 		model = get_chat_model(temperature=temperature)
 		agent = create_react_agent(model, tools, _react_prompt(system))
-		return AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True, max_iterations=3)
+		return AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True, max_iterations=5)
 	except Exception as e:
 		logging.error(f"Failed to create agent: {e}")
 		return None

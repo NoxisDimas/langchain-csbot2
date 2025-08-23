@@ -2,24 +2,11 @@ from typing import Union
 from app.config import get_settings
 from .mock import MockEcommerce
 
-# Optional imports guarded
-try:
-	from .shopify import ShopifyAdapter
-except Exception:
-	ShopifyAdapter = None  # type: ignore
-try:
-	from .woocommerce import WooCommerceAdapter
-except Exception:
-	WooCommerceAdapter = None  # type: ignore
-try:
-	from .shopee import ShopeeAdapter
-except Exception:
-	ShopeeAdapter = None  # type: ignore
-try:
-	from .tokopedia import TokopediaAdapter
-except Exception:
-	TokopediaAdapter = None  # type: ignore
-
+from .shopify import ShopifyAdapter
+from .woocommerce import WooCommerceAdapter
+from .shopee import ShopeeAdapter
+from .tokopedia import TokopediaAdapter
+from .airtable import AirtableEcommerceAdapter
 
 settings = get_settings()
 
@@ -46,4 +33,9 @@ def get_active_ecommerce():
 			return TokopediaAdapter()
 		except Exception:
 			pass
-	return MockEcommerce()
+	if AirtableEcommerceAdapter and settings.AIRTABLE_TABLE_NAME and settings.AIRTABLE_BASE_ID and settings.AIRTABLE_API_KEY:
+		try:
+			return AirtableEcommerceAdapter()
+		except Exception:
+			pass
+	

@@ -3,11 +3,7 @@ from langchain_core.documents import Document
 from app.config import get_settings
 from app.services.llm.provider import get_embedding_model
 from sqlalchemy import create_engine, text
-
-try:
-	from langchain_postgres import PGVector
-except Exception:
-	PGVector = None  # type: ignore
+from langchain_postgres import PGVector
 
 
 _settings = get_settings()

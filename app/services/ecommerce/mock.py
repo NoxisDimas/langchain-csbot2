@@ -7,6 +7,7 @@ class MockEcommerce(OrderStatus, ProductCatalog):
 		return {"order_id": order_id, "status": "in_transit", "eta": "tomorrow"}
 
 	def search_products(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+		print(f"Mock search for products with query: {query}")
 		return [
 			{"id": "sku-blue-shirt", "title": "Blue Casual Shirt", "size": "L", "url": "https://example.com/product/blue-shirt"}
 		]

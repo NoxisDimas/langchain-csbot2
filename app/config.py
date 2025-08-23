@@ -64,6 +64,11 @@ class Settings(BaseSettings):
 	TOKO_MERCHANT_ID: Optional[str] = None
 	TOKO_BASE_URL: Optional[str] = None
 
+	# Ecommerce: Airtable (optional)
+	AIRTABLE_TABLE_NAME: Optional[str] = None  # Name of the Airtable table to query
+	AIRTABLE_BASE_ID: Optional[str] = None  # Base ID for Airtable
+	AIRTABLE_API_KEY: Optional[str] = None  # API key for Airtable
+
 	# Policy
 	DATA_RETENTION_DAYS: int = 60
 	SENSITIVE_TTL_HOURS: int = 1

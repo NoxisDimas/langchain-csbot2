@@ -3,7 +3,7 @@ import json
 from typing import Optional, List, Dict, Any
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import ProgrammingError, IntegrityError
+from sqlalchemy.exc import IntegrityError
 from app.config import get_settings
 from app.persistence.models import Base, KnowledgeBase
 import uuid
