@@ -249,6 +249,75 @@ Delete a file from the uploads folder.
 }
 ```
 
+## Backward Compatibility
+
+The new RAG system maintains backward compatibility with the old API endpoints for existing clients:
+
+### Knowledge Base Endpoints (Legacy)
+
+**Note:** These endpoints are provided for backward compatibility. The new system uses a single collection approach.
+
+#### Create Knowledge Base
+
+**Endpoint:** `POST /api/rag/knowledge-bases`
+
+**Request Body:**
+```json
+{
+  "name": "knowledge_base_name",
+  "description": "Optional description"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "default",
+  "name": "knowledge_base_name",
+  "description": "Optional description",
+  "schema_name": "ai_cs",
+  "is_active": true,
+  "created_at": "2024-01-01T12:00:00",
+  "updated_at": "2024-01-01T12:00:00"
+}
+```
+
+#### List Knowledge Bases
+
+**Endpoint:** `GET /api/rag/knowledge-bases`
+
+**Response:**
+```json
+[
+  {
+    "id": "default",
+    "name": "Default Knowledge Base",
+    "description": "Default knowledge base using single collection",
+    "schema_name": "ai_cs",
+    "is_active": true,
+    "created_at": "2024-01-01T12:00:00",
+    "updated_at": "2024-01-01T12:00:00"
+  }
+]
+```
+
+#### Delete Knowledge Base
+
+**Endpoint:** `DELETE /api/rag/knowledge-bases/{kb_name}`
+
+**Response:**
+```json
+{
+  "message": "Knowledge base 'kb_name' deleted successfully (no-op in new system)"
+}
+```
+
+**Important Notes:**
+- These endpoints return mock responses for compatibility
+- The new system uses a single collection (`DB_SCHEMA`)
+- No actual knowledge base creation/deletion occurs
+- Existing clients can continue using these endpoints without modification
+
 ## Python Usage
 
 ### Using VectorStore Class
@@ -361,6 +430,11 @@ This will test:
    - Check if query is relevant to ingested content
    - Verify vector store is properly initialized
 
+5. **404 Errors on Knowledge Base Endpoints**
+   - These endpoints are now provided for backward compatibility
+   - They return mock responses and don't perform actual operations
+   - Consider migrating to the new API endpoints
+
 ### Logs
 
 The system provides detailed logging with emojis for easy identification:
@@ -372,6 +446,7 @@ The system provides detailed logging with emojis for easy identification:
 - 📚 Document operations
 - 📦 Vector store operations
 - 🗑️ Deletion operations
+- 🔄 Backward compatibility operations
 
 ## Migration from Old System
 
@@ -381,6 +456,14 @@ If you're migrating from the old RAG system:
 2. **Update your code** - Replace old API calls with new endpoints
 3. **Test thoroughly** - Use the test script to verify functionality
 4. **Update documentation** - Update any references to old endpoints
+
+### Migration Checklist
+
+- [ ] Replace `/api/rag/knowledge-bases` calls with new endpoints
+- [ ] Update file upload process to use `/api/rag/upload`
+- [ ] Use `/api/rag/ingest` for document processing
+- [ ] Update search calls to use new response format
+- [ ] Test all functionality with new API
 
 ## Performance Tips
 
