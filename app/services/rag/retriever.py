@@ -1,48 +1,58 @@
 import logging
 from typing import List, Optional
 from langchain_core.documents import Document
-from app.services.llm.provider import get_embedding_model
-from app.config import get_settings
+from app.services.rag.vector_store import VectorStore
 from app.utils.lang import detect_language, translate_text
-from langchain_postgres import PGVector
 
-_settings = get_settings()
 logger = logging.getLogger(__name__)
-    
-    # Use provided collection name or fallback to DB_SCHEMA
-def _get_vectorstore(collection_name: Optional[str] = None):
-    """Get vectorstore with specified collection name"""
-    if PGVector is None:
-        logger.error("PGVector is not available.")
-        return None
-    if not _settings.DATABASE_URL:
-        logger.error("Database URL is not set in settings.")
-        return None
-    
-    # Use provided collection name or fallback to DB_SCHEMA
-    cname = collection_name or _settings.DB_SCHEMA
-    logger.info(f"Initializing vectorstore for collection: {cname}")
+
+def retrieve_knowledge(query_text: str, collection_name: Optional[str] = None) -> List[Document]:
+    """
+    Retrieve knowledge from vector store using the new VectorStore class
+    """
+    logger.info("Retrieving knowledge for query: %s", query_text)
     
     try:
-        _embeddings = get_embedding_model()
-        vectorstore = PGVector(
-            _embeddings,
-            connection=_settings.DATABASE_URL,
-            collection_name=cname,
-        )
-        logger.info("Vectorstore initialized successfully.")
-        return vectorstore
+        vector_store = VectorStore()
+        results = vector_store.similarity_search(query_text, k=5)
+        
+        # Extract documents from (document, score) tuples
+        documents = [doc for doc, score in results]
+        logger.info("Retrieved %d documents.", len(documents))
+        return documents
+        
     except Exception as e:
-        logger.exception("Error initializing vectorstore: %s", e)
-        return None
-    
-def retrieve_knowledge(query_text: str, collection_name: Optional[str] = None) -> List[Document]:
-    logger.info("Retrieving knowledge for query: %s from collection: %s", query_text, collection_name or _settings.DB_SCHEMA)
-    
-    vs = _get_vectorstore(collection_name)
-    if vs is None:
-        logger.warning("Vectorstore is not available. Returning empty result.")
+        logger.error("Error retrieving knowledge: %s", e)
         return []
-    result = vs.similarity_search(query_text, k=5)
-    logger.info("Retrieved %d documents.", len(result))
-    return result   
+
+def retrieve_knowledge_with_scores(query_text: str, k: int = 5) -> List[tuple]:
+    """
+    Retrieve knowledge with similarity scores
+    """
+    logger.info("Retrieving knowledge with scores for query: %s", query_text)
+    
+    try:
+        vector_store = VectorStore()
+        results = vector_store.similarity_search(query_text, k=k)
+        logger.info("Retrieved %d documents with scores.", len(results))
+        return results
+        
+    except Exception as e:
+        logger.error("Error retrieving knowledge with scores: %s", e)
+        return []
+
+def filter_knowledge_by_metadata(key: str, value: str, k: int = 100) -> List[tuple]:
+    """
+    Filter knowledge by metadata
+    """
+    logger.info("Filtering knowledge by %s=%s", key, value)
+    
+    try:
+        vector_store = VectorStore()
+        results = vector_store.filter_by_metadata(key, value, k=k)
+        logger.info("Filtered %d documents.", len(results))
+        return results
+        
+    except Exception as e:
+        logger.error("Error filtering knowledge: %s", e)
+        return []   
