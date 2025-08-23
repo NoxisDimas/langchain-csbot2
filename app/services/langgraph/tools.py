@@ -48,7 +48,7 @@ def search_products_tool(query: str) -> Dict[str, Any]:
 
 
 @tool("retrieve_kb_snippets", return_direct=False)
-def retrieve_kb_snippets_tool(query: str) -> Dict[str, Any]:
+def retrieve_kb_snippets_tool(query: str, collection_name: str = None) -> Dict[str, Any]:
 	"""
     Retrieve the top knowledge base snippets based on a given query.
 
@@ -60,6 +60,8 @@ def retrieve_kb_snippets_tool(query: str) -> Dict[str, Any]:
     query (str): A string containing the user's search query or question. 
     The query may be automatically translated to English before processing 
     if required.
+    collection_name (str, optional): The collection name to search in. 
+    If not provided, uses the default DB_SCHEMA.
 
     Returns:
     Dict[str, Any]: A dictionary containing the key "snippets", which maps to a list 
@@ -71,7 +73,7 @@ def retrieve_kb_snippets_tool(query: str) -> Dict[str, Any]:
     - If no relevant snippets are found, the list will be empty.
     - The query is translated internally into English if needed, ensuring accurate results.
     """
-	docs = retrieve_knowledge(query)
+	docs = retrieve_knowledge(query, collection_name)
 	return {"snippets": [d.page_content for d in docs[:5]]}
 
 

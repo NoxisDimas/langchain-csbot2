@@ -104,10 +104,10 @@ class VectorStoreService:
 			search_kwargs=search_kwargs,
 		)
 		try:
-			return retriever.get_relevant_documents(query)
+			return retriever.invoke(query)
 		except Exception:
 			# Fallback: no server-side filter support, filter client-side
-			docs = retriever.get_relevant_documents(query)
+			docs = retriever.invoke(query)
 			if user_id:
 				return [d for d in docs if d.metadata.get("user_id") == user_id][:k]
 			return docs[:k]

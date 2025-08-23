@@ -1,0 +1,12 @@
+
+        FAQ untuk faq
+        
+        Q: Bagaimana cara membuat akun?
+        A: Klik tombol "Daftar" di halaman utama dan isi form pendaftaran.
+        
+        Q: Bagaimana cara reset password?
+        A: Klik "Lupa Password" di halaman login dan ikuti instruksi email.
+        
+        Q: Bagaimana cara menghubungi customer service?
+        A: Anda dapat menghubungi CS melalui email support@example.com atau chat di website.
+        
