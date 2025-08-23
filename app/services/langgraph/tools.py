@@ -48,7 +48,7 @@ def search_products_tool(query: str) -> Dict[str, Any]:
 
 
 @tool("retrieve_kb_snippets", return_direct=False)
-def retrieve_kb_snippets_tool(query: str, collection_name: str = None) -> Dict[str, Any]:
+def retrieve_kb_snippets_tool(query: str, collection_name: Optional[str] = None) -> Dict[str, Any]:
 	"""
     Retrieve the top knowledge base snippets based on a given query.
 

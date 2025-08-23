@@ -1,5 +1,5 @@
 
-        FAQ untuk faq
+        FAQ untuk Customer Service
         
         Q: Bagaimana cara membuat akun?
         A: Klik tombol "Daftar" di halaman utama dan isi form pendaftaran.
