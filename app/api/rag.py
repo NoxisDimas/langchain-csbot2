@@ -31,12 +31,19 @@ class UploadResponse(BaseModel):
     status: str
     message: str
 
+class CollectionInfo(BaseModel):
+    name: str
+    document_count: int
+    embedding_model: str
+    database_url: str
+
 class StatsResponse(BaseModel):
     collection_name: str
     database_url: str
     embedding_model: str
     uploads_folder: str
     files_count: int
+    collection: CollectionInfo
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(file: UploadFile = File(...)):
@@ -171,16 +178,39 @@ async def filter_documents(
         logger.error(f"❌ Filter failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/stats", response_model=StatsResponse)
+@router.get("/stats")
 async def get_stats():
-    """Get vector store statistics"""
+    """Get vector store statistics with frontend compatibility"""
     try:
         stats = get_ingestion_stats()
         
         if "error" in stats:
             raise HTTPException(status_code=500, detail=stats["error"])
         
-        return StatsResponse(**stats)
+        # Return both new and legacy structure for maximum compatibility
+        return {
+            # New structure
+            "collection_name": stats.get("collection_name", "ai_cs"),
+            "database_url": stats.get("database_url", "Unknown"),
+            "embedding_model": stats.get("embedding_model", "Unknown"),
+            "uploads_folder": stats.get("uploads_folder", "Unknown"),
+            "files_count": stats.get("files_count", 0),
+            "collection": {
+                "name": stats.get("collection_name", "ai_cs"),
+                "document_count": stats.get("files_count", 0),
+                "embedding_model": stats.get("embedding_model", "Unknown"),
+                "database_url": stats.get("database_url", "Unknown")
+            },
+            # Legacy structure for frontend compatibility
+            "vectorstore": {
+                "collection": {
+                    "name": stats.get("collection_name", "ai_cs"),
+                    "document_count": stats.get("files_count", 0),
+                    "embedding_model": stats.get("embedding_model", "Unknown"),
+                    "database_url": stats.get("database_url", "Unknown")
+                }
+            }
+        }
         
     except HTTPException:
         raise
@@ -331,3 +361,31 @@ async def delete_knowledge_base(kb_name: str):
     except Exception as e:
         logger.error(f"❌ Knowledge base deletion failed: {e}")
         raise HTTPException(status_code=500, detail="Internal error")
+
+# Legacy stats endpoint for frontend compatibility
+@router.get("/stats/legacy")
+async def get_legacy_stats():
+    """Legacy stats endpoint with old structure for frontend compatibility"""
+    try:
+        stats = get_ingestion_stats()
+        
+        if "error" in stats:
+            raise HTTPException(status_code=500, detail=stats["error"])
+        
+        # Return legacy structure that frontend expects
+        return {
+            "vectorstore": {
+                "collection": {
+                    "name": stats.get("collection_name", "ai_cs"),
+                    "document_count": stats.get("files_count", 0),
+                    "embedding_model": stats.get("embedding_model", "Unknown"),
+                    "database_url": stats.get("database_url", "Unknown")
+                }
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Legacy stats failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
