@@ -260,3 +260,74 @@ async def list_files():
     except Exception as e:
         logger.error(f"❌ File listing failed: {e}")
         raise HTTPException(status_code=500, detail="Internal error")
+
+# Backward compatibility endpoints
+class KnowledgeBaseCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class KnowledgeBaseResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str]
+    schema_name: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+@router.post("/knowledge-bases", response_model=KnowledgeBaseResponse)
+async def create_knowledge_base(kb_data: KnowledgeBaseCreate):
+    """Backward compatibility: Create a knowledge base (now uses single collection)"""
+    try:
+        logger.info(f"🔄 Backward compatibility: Creating knowledge base '{kb_data.name}'")
+        
+        # In the new system, we use a single collection
+        # This endpoint now just returns a mock response for compatibility
+        return KnowledgeBaseResponse(
+            id="default",
+            name=kb_data.name,
+            description=kb_data.description,
+            schema_name=settings.DB_SCHEMA,
+            is_active=True,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+    except Exception as e:
+        logger.error(f"❌ Knowledge base creation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal error")
+
+@router.get("/knowledge-bases", response_model=List[KnowledgeBaseResponse])
+async def list_knowledge_bases():
+    """Backward compatibility: List knowledge bases (now uses single collection)"""
+    try:
+        logger.info("🔄 Backward compatibility: Listing knowledge bases")
+        
+        # In the new system, we use a single collection
+        # Return a default knowledge base for compatibility
+        return [
+            KnowledgeBaseResponse(
+                id="default",
+                name="Default Knowledge Base",
+                description="Default knowledge base using single collection",
+                schema_name=settings.DB_SCHEMA,
+                is_active=True,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+        ]
+    except Exception as e:
+        logger.error(f"❌ Knowledge bases listing failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal error")
+
+@router.delete("/knowledge-bases/{kb_name}")
+async def delete_knowledge_base(kb_name: str):
+    """Backward compatibility: Delete knowledge base (not applicable in new system)"""
+    try:
+        logger.info(f"🔄 Backward compatibility: Deleting knowledge base '{kb_name}'")
+        
+        # In the new system, we don't delete collections
+        # Just return success for compatibility
+        return {"message": f"Knowledge base '{kb_name}' deleted successfully (no-op in new system)"}
+    except Exception as e:
+        logger.error(f"❌ Knowledge base deletion failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal error")
